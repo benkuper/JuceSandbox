@@ -60,11 +60,13 @@ public:
 		childA.getDynamicObject()->setProperty("name", "childA");
 		root.getDynamicObject()->setProperty("childA", childA);
 
-		engine.registerNativeObject("root", root.getDynamicObject());
+		JSObject o = engine.getRootObject();
+		o.setProperty("root", root);
+		//engine.registerNativeObject("root", root.getDynamicObject());
 
 		var childB(new DynamicObject());
 		childB.getDynamicObject()->setProperty("name", "childB");
-		root.getDynamicObject()->setProperty("childB", childB);
+		o.setProperty("childB", childB);
 
 
 		String s = File::getSpecialLocation(File::currentApplicationFile).getParentDirectory().getChildFile("test.js").loadFileAsString();
@@ -87,7 +89,7 @@ public:
 		DBG("Adding childC");
 		var childC(new DynamicObject());
 		childC.getDynamicObject()->setProperty("name", "childC");
-		root.getDynamicObject()->setProperty("childC", childC);
+		o["root"].setProperty("childC",childC);
 
 
 		DBG("Calling test function");
