@@ -92,7 +92,7 @@ public:
 
 		DBG("Calling test function");
 		r = nullptr;
-		engine.callFunction("test", args, r);
+		engine.callFunction("test2", args, r);
 		if (r != nullptr) DBG("Error : " << r->getErrorMessage());
 
 	}
