@@ -38,7 +38,7 @@ public:
 			{
 				if (args.arguments[i].isObject())
 				{
-					DBG("[Object : " + args.arguments[i].getProperty("name", "noname").toString() + " : " + String((int)args.arguments[i].getDynamicObject()) + "]");
+					DBG("[Object : " + args.arguments[i].getProperty("name", "noname").toString() + " : " + String((int64_t)args.arguments[i].getDynamicObject()) + "]");
 				}
 				else
 				{
