@@ -49,8 +49,10 @@ ParentComp::ParentComp() :
 	childB("Child B")
 {
 	addAndMakeVisible(childA);
-	addMouseListener(this, true);
 	addAndMakeVisible(childB);
+
+	addMouseListener(this, true);
+	setDisableInternalMouseEvents(true);
 }
 
 void ParentComp::paint(juce::Graphics& g)
