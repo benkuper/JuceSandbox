@@ -38,21 +38,21 @@ public:
 			{
 				if (args.arguments[i].isObject())
 				{
-					DBG("[Object : " + args.arguments[i].getProperty("name", "noname").toString());
+					DBG("[Object : " + args.arguments[i].getProperty("name", "noname").toString() + " : " + String((int)args.arguments[i].getDynamicObject()) + "]");
 				}
 				else
 				{
 					DBG(args.arguments[i].toString());
 				}
 			}
-			DBG(args.arguments[0].toString());
 			return var::undefined();
 			});
 
 
 		root.getDynamicObject()->setMethod("getChild", [this](const var::NativeFunctionArgs& args) {
+
 			auto name = args.arguments[0].toString();
-			auto child = root.getDynamicObject()->getProperty(name);
+			auto child = args.thisObject.getDynamicObject()->getProperty(name);
 			return child;
 			});
 
@@ -71,7 +71,7 @@ public:
 
 		Result* r = nullptr;
 		DBG("Evaluate engine");
-		engine.evaluate(s, r);
+		engine.execute(s);
 
 		if (r != nullptr) DBG("Error : " << r->getErrorMessage());
 
