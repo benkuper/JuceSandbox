@@ -1,105 +1,127 @@
 /*
   ==============================================================================
 
-    This file contains the basic startup code for a JUCE application.
+	This file contains the basic startup code for a JUCE application.
 
   ==============================================================================
 */
 
 #include <JuceHeader.h>
-#include "MainComponent.h"
 
-//==============================================================================
-class JuceSandboxApplication  : public juce::JUCEApplication
+using namespace juce;
+
+//===================================================
+// ===========================
+class JuceSandboxApplication : public JUCEApplication
 {
 public:
-    //==============================================================================
-    JuceSandboxApplication() {}
+	//==============================================================================
+	JuceSandboxApplication() {}
 
-    const juce::String getApplicationName() override       { return ProjectInfo::projectName; }
-    const juce::String getApplicationVersion() override    { return ProjectInfo::versionString; }
-    bool moreThanOneInstanceAllowed() override             { return true; }
+	const String getApplicationName() override { return ProjectInfo::projectName; }
+	const String getApplicationVersion() override { return ProjectInfo::versionString; }
+	bool moreThanOneInstanceAllowed() override { return true; }
 
-    //==============================================================================
-    void initialise (const juce::String& commandLine) override
-    {
-        // This method is where you should put your application's initialisation code..
+	JavascriptEngine engine;
+	var root;
 
-        mainWindow.reset (new MainWindow (getApplicationName()));
-    }
 
-    void shutdown() override
-    {
-        // Add your application's shutdown code here..
+	//==============================================================================
+	void initialise(const String& commandLine) override
+	{
 
-        mainWindow = nullptr; // (deletes our window)
-    }
+		root = var(new DynamicObject());
+		root.getDynamicObject()->setProperty("name", "root");
 
-    //==============================================================================
-    void systemRequestedQuit() override
-    {
-        // This is called when the app is being asked to quit: you can ignore this
-        // request and let the app carry on running, or call quit() to allow the app to close.
-        quit();
-    }
+		root.getDynamicObject()->setMethod("log", [](const var::NativeFunctionArgs& args) {
+			for (int i = 0; i < args.numArguments; i++)
+			{
+				if (args.arguments[i].isObject())
+				{
+					DBG("[Object : " + args.arguments[i].getProperty("name", "noname").toString());
+				}
+				else
+				{
+					DBG(args.arguments[i].toString());
+				}
+			}
+			DBG(args.arguments[0].toString());
+			return var::undefined();
+			});
 
-    void anotherInstanceStarted (const juce::String& commandLine) override
-    {
-        // When another instance of the app is launched while this one is running,
-        // this method is invoked, and the commandLine parameter tells you what
-        // the other instance's command-line arguments were.
-    }
 
-    //==============================================================================
-    /*
-        This class implements the desktop window that contains an instance of
-        our MainComponent class.
-    */
-    class MainWindow    : public juce::DocumentWindow
-    {
-    public:
-        MainWindow (juce::String name)
-            : DocumentWindow (name,
-                              juce::Desktop::getInstance().getDefaultLookAndFeel()
-                                                          .findColour (juce::ResizableWindow::backgroundColourId),
-                              DocumentWindow::allButtons)
-        {
-            setUsingNativeTitleBar (true);
-            setContentOwned (new MainComponent(), true);
+		root.getDynamicObject()->setMethod("getChild", [this](const var::NativeFunctionArgs& args) {
+			auto name = args.arguments[0].toString();
+			auto child = root.getDynamicObject()->getProperty(name);
+			return child;
+			});
 
-           #if JUCE_IOS || JUCE_ANDROID
-            setFullScreen (true);
-           #else
-            setResizable (true, true);
-            centreWithSize (getWidth(), getHeight());
-           #endif
+		var childA(new DynamicObject());
+		childA.getDynamicObject()->setProperty("name", "childA");
+		root.getDynamicObject()->setProperty("childA", childA);
 
-            setVisible (true);
-        }
+		engine.registerNativeObject("root", root.getDynamicObject());
 
-        void closeButtonPressed() override
-        {
-            // This is called when the user tries to close this window. Here, we'll just
-            // ask the app to quit when this happens, but you can change this to do
-            // whatever you need.
-            JUCEApplication::getInstance()->systemRequestedQuit();
-        }
+		var childB(new DynamicObject());
+		childB.getDynamicObject()->setProperty("name", "childB");
+		root.getDynamicObject()->setProperty("childB", childB);
 
-        /* Note: Be careful if you override any DocumentWindow methods - the base
-           class uses a lot of them, so by overriding you might break its functionality.
-           It's best to do all your work in your content component instead, but if
-           you really have to override any DocumentWindow methods, make sure your
-           subclass also calls the superclass's method.
-        */
 
-    private:
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
-    };
+		String s = File::getSpecialLocation(File::currentApplicationFile).getParentDirectory().getChildFile("test.js").loadFileAsString();
 
-private:
-    std::unique_ptr<MainWindow> mainWindow;
+		Result* r = nullptr;
+		DBG("Evaluate engine");
+		engine.evaluate(s, r);
+
+		if (r != nullptr) DBG("Error : " << r->getErrorMessage());
+
+		Array<var> arr;
+		var::NativeFunctionArgs args(var::undefined(), arr.getRawDataPointer(), 0);
+		r = nullptr;
+
+		DBG("Calling test function");
+		r = nullptr;
+		engine.callFunction("test", args, r);
+		if (r != nullptr) DBG("Error : " << r->getErrorMessage());
+
+		DBG("Adding childC");
+		var childC(new DynamicObject());
+		childC.getDynamicObject()->setProperty("name", "childC");
+		root.getDynamicObject()->setProperty("childC", childC);
+
+
+		DBG("Calling test function");
+		r = nullptr;
+		engine.callFunction("test", args, r);
+		if (r != nullptr) DBG("Error : " << r->getErrorMessage());
+
+	}
+
+
+
+	void shutdown() override
+	{
+		// Add your application's shutdown code here..
+
+	}
+
+	//==============================================================================
+	void systemRequestedQuit() override
+	{
+		// This is called when the app is being asked to quit: you can ignore this
+		// request and let the app carry on running, or call quit() to allow the app to close.
+		quit();
+	}
+
+	void anotherInstanceStarted(const String& commandLine) override
+	{
+		// When another instance of the app is launched while this one is running,
+		// this method is invoked, and the commandLine parameter tells you what
+		// the other instance's command-line arguments were.
+	}
+
 };
 
 //==============================================================================
 // This macro generates the main() routine that launches the app.
-START_JUCE_APPLICATION (JuceSandboxApplication)
+START_JUCE_APPLICATION(JuceSandboxApplication)
